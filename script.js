@@ -11,11 +11,31 @@
 
 // global variables
 var selectedCity = "Tucson, AZ";
-var weatherReport;
+var weatherReport; //hold our response data
 var httpRequest = false; // have an XHR object to use?
 //function to instantiate XHR
 function getRequestObject() {
-    alert("getRequestObject()");
+    try {
+        httpRequest = new XMLHttpRequest();
+    } catch (requestError) {
+        document.querySelector("p.error").innerHTML = "Forcast not supported by your browser."
+        document.querySelector("p.error").style.display = "block"
+        return false;
+    }
+    return httpRequest;
+}
+
+//function to process responce data
+function fillWeather() {
+    //check responce state for 4 (done) and status 200
+    if (httpRequest.readyState === 4 && httpRequest.status === 200) {
+        weatherReport = JSON.parse(httpRequest.responseText);
+    }
+    var days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    var dateValue = new Date(weatherReport.daily.data[0].time);
+    var dayOfWeek = dateValue.getDay();
+    var rows = document.querySelectorAll("section.week table tbody tr");
+    document.querySelector("section.week table caption").innerHTML = selectedCity;
 }
 //get weather called on load or button click to select city for default city 
 //or button click to selected city
@@ -42,6 +62,15 @@ function getWeather(evt) {
     if (!httpRequest) {
         httpRequest = getRequestObject();
     }
+    //clear any open request
+    httpRequest.abort();
+    //target the request to a resource
+    httpRequest.open("get", "solar.php?" + "lat=" + latitude + "&lng=" + longitude, true);
+    //(solar.php is the proxy to get the data from the other server, which in the case is the weather)
+
+    //send request to server
+    httpRequest.send(null);
+    httpRequest.onreadystatechange = fillWeather;
 }
 
 //retrive location cities form the page
